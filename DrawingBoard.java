@@ -14,9 +14,11 @@ import javax.swing.*;
 @SuppressWarnings("unchecked")
 public class DrawingBoard extends JFrame implements Runnable
 {
+    //TOOL TIPS!!
     private JButton save, load, clear, color, brush, erase, draw, 
                     line, rectangle, oval, polygon;
     private JPanel upperButtonPanel, lowerButtonPanel;
+    private JToggleButton fill;
     
     private Color c;
     private Point p;
@@ -26,14 +28,15 @@ public class DrawingBoard extends JFrame implements Runnable
     private ArrayList<PointObj> pointObjs = new ArrayList<PointObj>();
     private ArrayList<Line> lines = new ArrayList<Line>();
     private ArrayList<Polygon> polygons = new ArrayList<Polygon>();
-    private ArrayList<Point> polygonPoints = new ArrayList<Point>();
+    private ArrayList<Integer> polygonXs = new ArrayList<Integer>();
+    private ArrayList<Integer> polygonYs = new ArrayList<Integer>();
     private ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
     private ArrayList<Rectangle> ovals = new ArrayList<Rectangle>();
     private ArrayList<Point> ovalPoints = new ArrayList<Point>();
 
     private MouseHandler mh;
     private boolean clearScreen, shouldErase, drawPoints, endRect, endOval, 
-                    drawLine, endLine, drawRect, drawPolygon, drawOval;  
+                    drawLine, endLine, drawRect, drawPolygon, drawOval, shouldFill;  
     
     //******************************DrawingBoard()**********************
     public DrawingBoard()
@@ -107,16 +110,20 @@ public class DrawingBoard extends JFrame implements Runnable
         oval = new JButton("Oval");
         polygon = new JButton("Polygon");
         
+        fill = new JToggleButton("Fill");
+        
         JButtonListener jbl = new JButtonListener();
         line.addActionListener(jbl);
         rectangle.addActionListener(jbl);
         oval.addActionListener(jbl);
         polygon.addActionListener(jbl);
+        fill.addActionListener(jbl);
         
         lowerButtonPanel.add(line);
         lowerButtonPanel.add(rectangle);
         lowerButtonPanel.add(oval);
         lowerButtonPanel.add(polygon);
+        lowerButtonPanel.add(fill);
     }
     
     public class JButtonListener implements ActionListener
@@ -178,6 +185,15 @@ public class DrawingBoard extends JFrame implements Runnable
             {
                 str = "polygon";
                 c = mh.getLastColor();
+            }
+            
+            if (fill.isSelected())
+            {
+                shouldFill = true;
+            }
+            else
+            {
+                shouldFill = false;
             }
         }
         
@@ -327,12 +343,15 @@ public class DrawingBoard extends JFrame implements Runnable
     public class Polygon implements Serializable
     {
         private Color c;
-        private ArrayList<Point> points = new ArrayList<Point>();
+        private ArrayList<Integer> xCoord = new ArrayList<Integer>();
+        private ArrayList<Integer> yCoord = new ArrayList<Integer>();
+        
         
         //******************************Polygon()*******************************
-        public Polygon(ArrayList<Point> points, Color c)
+        public Polygon(ArrayList<Integer> xCoord, ArrayList<Integer> yCoord, Color c)
         {
-            this.points = points;
+            this.xCoord = xCoord;
+            this.yCoord = yCoord;
             this.c = c;
         }
     }
@@ -453,16 +472,19 @@ public class DrawingBoard extends JFrame implements Runnable
                 //******************************polygonEvent()*******************************
                 public void polygonEvent(MouseEvent me)
                 {
-                    Point p = new Point(mx,my);
-                    polygonPoints.add(p);
+                    polygonXs.add(mx);
+                    polygonYs.add(my);
                     
                     if (me.getClickCount()==2) //finish polygon
                     {
-                        ArrayList<Point> finalPoints = new ArrayList<Point>();
-                        finalPoints.addAll(polygonPoints);
-                        Polygon shape = new Polygon(finalPoints, c);
+                        ArrayList<Integer> finalX = new ArrayList<Integer>();
+                        ArrayList<Integer> finalY = new ArrayList<Integer>();
+                        finalX.addAll(polygonXs);
+                        finalY.addAll(polygonYs);
+                        Polygon shape = new Polygon(finalX, finalY, c);
                         polygons.add(shape);
-                        polygonPoints.clear();
+                        polygonXs.clear();
+                        polygonYs.clear();
                     }
                 }
                
@@ -483,7 +505,6 @@ public class DrawingBoard extends JFrame implements Runnable
                         PointObj pointObj = new PointObj(p, input, c);
                         pointObjs.add(pointObj);
                     }
-
                     repaint();
                 }
             });
@@ -506,8 +527,9 @@ public class DrawingBoard extends JFrame implements Runnable
         {
             if (clearScreen)
             {
-                g.clearRect(0, 0, this.getSize().width, this.getSize().height);
-                
+                g.setColor(Color.WHITE);
+                g.fillRect(0, 0, this.getSize().width, this.getSize().height);
+               
                 pointObjs.clear();
                 lines.clear();
                 rectangles.clear();
@@ -523,10 +545,9 @@ public class DrawingBoard extends JFrame implements Runnable
                 c = getBackground();
                 shouldErase = false;
             }
+            
             if (drawPoints)
-            {
                 drawPoints(g);
-            }
             
             if (drawLine)
                 drawLines(g);
@@ -590,7 +611,10 @@ public class DrawingBoard extends JFrame implements Runnable
                     int w = o.getWidth(q1, q2);
                     int h = o.getHeight(q1, q2);
                     g.setColor(o.c);
-                    g.drawOval(q1.x, q1.y, w, h);
+                    if (shouldFill)
+                        g.fillOval(q1.x, q1.y, w, h);
+                    else 
+                        g.drawOval(q1.x, q1.y, w, h);
                 }
             }         
         }
@@ -609,7 +633,10 @@ public class DrawingBoard extends JFrame implements Runnable
                     int w = r.getWidth(q1, q2);
                     int h = r.getHeight(q1, q2);
                     g.setColor(r.c);
-                    g.drawRect(q1.x, q1.y, w, h);
+                    if (shouldFill)
+                        g.fillRect(q1.x, q1.y, w, h);
+                    else
+                        g.drawRect(q1.x, q1.y, w, h);
                 }
             }         
         }
@@ -621,21 +648,26 @@ public class DrawingBoard extends JFrame implements Runnable
             
             if (length > 0)
             {
-                for (Polygon p : polygons)
+                for (Polygon p: polygons)
                 {
-                    int size = p.points.size();
-                    g.setColor(p.c);
-                    
-                    for (int i = 0; i < size-1;i++)
+                    int pointCt = p.xCoord.size();
+                    int x[] = new int[pointCt];
+                    for (int i = 0; i < pointCt; i++)
                     {
-                        Point start = p.points.get(i);
-                        Point end = p.points.get(i+1);
-                        g.drawLine(start.x, start.y, end.x, end.y);
+                        x[i] = p.xCoord.get(i);
                     }
                     
-                    Point finalStart = p.points.get(size-1);
-                    Point finalEnd = p.points.get(0);
-                    g.drawLine(finalStart.x, finalStart.y, finalEnd.x, finalEnd.y);
+                    int y[] = new int[pointCt];
+                    for (int i = 0; i < pointCt; i++)
+                    {
+                        y[i] = p.yCoord.get(i);
+                    }
+                    
+                    g.setColor(p.c);
+                    if (shouldFill)
+                        g.fillPolygon(x, y, pointCt);
+                    else 
+                        g.drawPolygon(x, y, pointCt);
                 }
             }
         }
