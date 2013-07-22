@@ -74,12 +74,20 @@ public class DrawingBoard extends JFrame implements Runnable
         upperButtonPanel.setSize(200,100);
         
         save = new JButton("Save");
+        save.setToolTipText("Save the file to be reopened later on this program.");
         load = new JButton("Load");
+        load.setToolTipText("Load a file previously saved by this program.");
         clear = new JButton("Clear");
+        clear.setToolTipText("Clear the screen of the current drawing.");
         color = new JButton("Color");
+        color.setToolTipText("<html>Choose a color before drawing to start with something <br>other than the default black.</html>");
         brush = new JButton("Brush");
+        brush.setToolTipText("<html>Enter characters to create a brushstroke to draw in something <br>other than the default star (*).</html>");
         erase = new JButton("Erase");
+        //erase is currently the wrong color ....
+        erase.setToolTipText("Erases the current drawing using the current brushstroke.");
         draw = new JButton("Draw");
+        draw.setToolTipText("<html>Draw in freehand with the default star (*) or choose a different <br>brushstroke with the Brush button.</html>");
         
         JButtonListener jbl = new JButtonListener();
         save.addActionListener(jbl);
@@ -106,11 +114,15 @@ public class DrawingBoard extends JFrame implements Runnable
         lowerButtonPanel.setSize(200,100);
         
         line = new JButton("Line");
+        line.setToolTipText("<html>Single click the point where the line should start. <br>Double click the end point.</html>");
         rectangle = new JButton("Rectangle");
+        rectangle.setToolTipText("<html>Single click the point that should be the rectangle's top left corner. <br>Double click the point that should be the rectangle's lower right corner to finish it.</html>");
         oval = new JButton("Oval");
+        oval.setToolTipText("<html>Single click the point that should be where the oval begins. <br>Double click the point that should give the desired radius and finish the oval.</html>");
         polygon = new JButton("Polygon");
-        
+        polygon.setToolTipText("<html>Single click each vertice of the polygon. <br>The last point should be double clicked.");
         fill = new JToggleButton("Fill");
+        fill.setToolTipText("<html>Select the Fill button if the figure drawn should be filled with color. <br>Choose a color after clicking the Fill button.</html>");
         
         JButtonListener jbl = new JButtonListener();
         line.addActionListener(jbl);
