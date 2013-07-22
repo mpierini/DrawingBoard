@@ -554,7 +554,7 @@ public class DrawingBoard extends JFrame implements Runnable
             if (shouldErase)
             {
                 last_color = c;
-                c = getBackground();
+                c = Color.WHITE;
                 shouldErase = false;
             }
             
